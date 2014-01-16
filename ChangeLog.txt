@@ -1,0 +1,7 @@
+2014-01-07  Titus Brown  <t@Titus-MacBook-Air-2.local>
+
+ * Initialized repository, created server.py and README.
+
+2014-01-15  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
+
+ * Added simple html page to be sent from the server
