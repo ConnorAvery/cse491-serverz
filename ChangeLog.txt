@@ -5,3 +5,7 @@
 2014-01-15  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
 
  * Added simple html page to be sent from the server
+ 
+ 2014-01-23  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
+
+ * Hw2 added content, image, and file
