@@ -9,3 +9,7 @@
  2014-01-23  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
 
  * Hw2 added content, image, and file
+
+ 2014-01-23  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
+
+ * Hw3 added submit form
