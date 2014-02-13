@@ -2,7 +2,10 @@
 import random
 import socket
 import time
-import urlparse
+from urlparse import urlparse, parse_qs
+import jinja2
+from StringIO import StringIO
+import cgi
 
 def main():
     s = socket.socket()         # Create a socket object
@@ -23,93 +26,51 @@ def main():
         handle_connection(c)
 
 def handle_connection(conn):
-    request = conn.recv(1000)
-    print request
+    loader = jinja2.FileSystemLoader('./templates')
+    env = jinja2.Environment(loader=loader)
+    retval = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n'
+    content = ''
 
-    first_line = request.split('\r\n')[0].split(' ')
+    response = {
+                '/' : 'index.html', \
+                '/content' : 'content.html', \
+                '/file' : 'file.html', \
+                '/image' : 'image.html', \
+                '/form' : 'form.html', \
+                '/submit' : 'submit.html', \
+               }
 
-    request_type = first_line[0]
-    print request_type
-    
+    req = conn.recv(1)
+    count = 0
+    while req[-4:] != '\r\n\r\n':
+        req += conn.recv(1)
+
+    req, data = req.split('\r\n',1)
+    headers = {}
+    for line in data.split('\r\n')[:-2]:
+        k, v = line.split(': ', 1)
+        headers[k.lower()] = v
+
+    path = urlparse(req.split(' ', 3)[1])
+
+    args = parse_qs(path[4])
+    if req.startswith('POST '):
+        while len(content) < int(headers['content-length']):
+            content += conn.recv(1)
+    fs = cgi.FieldStorage(fp=StringIO(content), headers=headers, environ={'REQUEST_METHOD' : 'POST'})
+    args.update(dict([(x, [fs[x].value]) for x in fs.keys()]))
+
     try:
-        parsed_url = urlparse.urlparse(first_line[1])
-        path = parsed_url[2]
-    except:
-        path = "/404"
+        template = env.get_template(response[path[2]])
+    except KeyError:
+        args['path'] = path[2]
+        retval = 'HTTP/1.0 404 Not Found\r\n\r\n'
+        template = env.get_template('404.html')
 
-    #print parsed_url
-    print path
-
-    # send a response
-
-    if request_type == "POST":
-        if path == '/':
-            print '//////////'
-            handle_index(conn, '')
-        elif path == '/submit':
-            handle_submit(conn,request.split('\r\n')[-1])
-    
-    else:
-        if path == '/':
-            handle_index(conn, parsed_url)
-        elif path == '/content':
-            handle_content(conn, parsed_url)
-        elif path == '/file':
-            handle_file(conn, parsed_url)
-        elif path == '/image':
-            handle_image(conn, parsed_url)
-        elif path == '/submit':
-            handle_submit(conn,parsed_url)
+    retval += template.render(args)
+    conn.send(retval.encode('utf-8'))
 
     conn.close()
-
-def handle_index(conn, parsed_url):
-    conn.send('HTTP/1.0 200 OK\r\n' + \
-            'Content-type: text/html\r\n' + \
-            '\r\n' + \
-            '<html><body>' + \
-            '<h1>Hello world!</h1>This is ConnorAvery\'s Web server.' + \
-            '<br/><a href="/content">Content</a>' + \
-            '<br/><a href="/file">File</a>' + \
-            '<br/><a href="/image">Image</a>' + \
-            '</body></html>'+ \
-            "<form action='/submit' method='GET'>\n" + \
-            "<p>first name: <input type='text' name='firstname'></p>\n" + \
-            "<p>last name: <input type='text' name='lastname'></p>\n" + \
-            "<input type='submit' value='Submit'>\n\n" + \
-            "</form>")
-def handle_submit(conn, parsed_url):
-    query = parsed_url[4]
-    
-    # each value is split by an &
-    query = query.split("&")
-
-    # format is name=value. We want the value.
-    firstname = query[0].split("=")[1]
-    lastname = query[1].split("=")[1]
-
-    conn.send('HTTP/1.0 200 OK\r\n' + \
-            'Content-type: text/html\r\n' + \
-            '\r\n' + \
-              "Hello Mr. %s %s." % (firstname, lastname))
-    
-def handle_content(conn, parsed_url):
-    conn.send('HTTP/1.0 200 OK\r\n' + \
-                      'Content-Type: text/html\r\n\r\n' + \
-                      '<!DOCTYPE html><html><body><h1>Hello, world</h1> ' + \
-                      'This is ConnorAvery\'s content page</body></html>')
-def handle_image(conn, parsed_url):
-    conn.send('HTTP/1.0 200 OK\r\n' + \
-                      'Content-Type: text/html\r\n\r\n' + \
-                      '<!DOCTYPE html><html><body><h1>Hello, world</h1> ' + \
-                      'This is ConnorAvery\'s image page</body></html>'
-)
-def handle_file(conn, parsed_url):
-    conn.send('HTTP/1.0 200 OK\r\n' + \
-                      'Content-Type: text/html\r\n\r\n' + \
-                      '<!DOCTYPE html><html><body><h1>Hello, world</h1> ' + \
-                      'This is ConnorAvery\'s file page</body></html>')
-
 
 
 if __name__ == '__main__':
