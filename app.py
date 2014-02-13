@@ -120,3 +120,4 @@ def handle_submit_get(environ, env):
 
     vars = dict(firstname = firstname, lastname = lastname)
     return str(env.get_template("submit.html").render(vars))
+    
