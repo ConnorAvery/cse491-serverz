@@ -1,6 +1,12 @@
 <html>
 	<body>
 		<h1>Image Page</h1>
-		Image<br />
+		This page contains images.<br />
+		<ul>
+{% for name in names %}
+		<a href='/pics/{{ name }}'>{{ name }}<br>
+{% endfor %}
+		</ul>
+		<a href="/">Home</a>
 	</body>
 </html>
