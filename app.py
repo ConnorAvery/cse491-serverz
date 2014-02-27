@@ -4,120 +4,117 @@
 # started hw5 too late
 
 import cgi
-import urlparse
 import jinja2
-from wsgiref.util import setup_testing_defaults
+import os
+import traceback
+import urllib
+from StringIO import StringIO
+from urlparse import urlparse, parse_qs
+from wsgiref.simple_server import make_server
 
-# A relatively simple WSGI application. It's going to print out the
-# environment dictionary after being updated by setup_testing_defaults
-def simple_app(environ, start_response):
+def render_page(page, params):
     loader = jinja2.FileSystemLoader('./templates')
     env = jinja2.Environment(loader=loader)
+    template = env.get_template(page)
+    x = template.render(params).encode('latin-1', 'replace')
+    return str(x)
 
-    print(environ)
 
-    # By default, set up the 404 page response. If it's
-    # a valid page, we change this. If some weird stuff
-    # happens, it'll default to 404.
-    status = '404 Not Found'
-    response_content = not_found('', env)
-    headers = [('Content-type', 'text/html')]
-    
-    try:
-        http_method = environ['REQUEST_METHOD']
+# Get a list of all files in a directory
+def get_contents(dir):
+    list = []
+    for file in os.listdir(dir):
+        list.append(file)
+    return list
+
+def get_file(file_in):
+    fp = open(file_in, 'rb')
+    data = [fp.read()]
+    fp.close
+    return data
+
+class MyApp(object):
+    def __call__(self, environ, start_response):
+        options = {'/' : self.index,
+                   '/content' : self.content,
+                   '/file' : self.File,
+                   '/image' : self.Image,
+                   '/form' : self.form,
+                   '/submit' : self.submit }
+
         path = environ['PATH_INFO']
-    except:
-        pass
+        
+        if path[:5] == '/text':
+            return self.text(environ, start_response)
+        elif path[:5] == '/pics':
+            return self.pics(environ, start_response)
+        page = options.get(path)
 
-    if http_method == 'POST':
-        if path == '/':
-            status = '200 OK'
-            response_content = handle_index(environ, env)
-        elif path == '/submit':
-            status = '200 OK'
-            response_content = handle_submit_post(environ, env)
-    elif http_method == 'GET':
-        if path == '/':
-            status = '200 OK'
-            response_content = handle_index(environ, env)
-        elif path == '/content':
-            status = '200 OK'
-            response_content = handle_content(environ, env)
-        elif path == '/file':
-            status = '200 OK'
-            response_content = handle_file(environ, env)
-        elif path == '/image':
-            status = '200 OK'
-            response_content = handle_image(environ, env)
-        elif path == '/submit':
-            status = '200 OK'
-            response_content = handle_submit_get(environ, env)
-                
-    start_response(status, headers)
-    return response_content
+        if page is None:
+            return self.error(environ, start_response)
+
+        return page(environ, start_response)
+
+    def error(self, environ, start_response):
+        start_response('404 Not Found', [('Content-type', 'text/html')])
+        return render_page('404.html','')
+
+    def index(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/html')])
+        return render_page('index.html','')
+
+    def content(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/html')])
+        return render_page('content.html','')
+
+    def File(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/html')])
+        params = dict(names=get_contents('files'))
+        return render_page('file.html', params)
+
+    def Image(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/html')])
+        params = dict(names=get_contents('images'))
+        return render_page('image.html', params)
+
+    def form(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/html')])
+        return render_page('form.html','')
+
+    def submit(self, environ, start_response):
+        method = environ['REQUEST_METHOD']
+        if method == 'GET':
+            return self.handle_get(environ, start_response)
+        else:
+            return self.handle_post(environ, start_response)
+
+    def handle_get(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/html')])
+        params = parse_qs(environ['QUERY_STRING'])
+        return render_page('submit.html', params)
+
+    def handle_post(self, environ, start_response):
+        con_type = environ['CONTENT_TYPE']
+        headers = {}
+        params ={}
+        for k, v in environ.iteritems():
+            headers['content-type'] = environ['CONTENT_TYPE']
+            headers['content-length'] = environ['CONTENT_LENGTH']
+            fs = cgi.FieldStorage(fp=environ['wsgi.input'], \
+                                  headers=headers, environ=environ)
+            params.update({x: [fs[x].value] for x in fs.keys()})
+        start_response('200 OK', [('Content-type', con_type)])
+        return render_page('submit.html', params)
+
+    def text(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'text/plain')])
+        text_file = './files/' + environ['PATH_INFO'][5:]
+        return get_file(text_file)
+
+    def pics(self, environ, start_response):
+        start_response('200 OK', [('Content-type', 'image/jpeg')])
+        pic_file = './images/' + environ['PATH_INFO'][5:]
+        return get_file(pic_file)
 
 def make_app():
-    return simple_app
-
-def handle_index(params, env):
-    return str(env.get_template("index.html").render())
-    
-def handle_content(params, env):
-    return str(env.get_template("content.html").render())
-
-def handle_file(params, env):
-    return str(env.get_template("file.html").render())
-
-def handle_image(params, env):
-    return str(env.get_template("image.html").render())
-
-def not_found(params, env):
-    return str(env.get_template("404.html").render())
-
-def handle_submit_post(environ, env):
-    ''' Handle a connection given path /submit '''
-    # submit needs to know about the query field, so more
-    # work needs to be done here.
-
-    # we want the first element of the returned list
-    headers = {}
-    for k in environ.keys():
-        headers[k.lower()] = environ[k]
-
-    form = cgi.FieldStorage(headers = headers, fp = environ['wsgi.input'],
-                            environ = environ)
-
-    try:
-      firstname = form['firstname'].value
-    except KeyError:
-      firstname = ''
-    try:
-      lastname = form['lastname'].value
-    except KeyError:
-      lastname = ''
-
-    print form
-    vars = dict(firstname = firstname, lastname = lastname)
-    return str(env.get_template("submit.html").render(vars))
-
-def handle_submit_get(environ, env):
-    ''' Handle a connection given path /submit '''
-    # submit needs to know about the query field, so more
-    # work needs to be done here.
-
-    # we want the first element of the returned list
-    params = environ['QUERY_STRING']
-    params = urlparse.parse_qs(params)
-
-    try:
-      firstname = params['firstname'][0]
-    except KeyError:
-      firstname = ''
-    try:
-      lastname = params['lastname'][0]
-    except KeyError:
-      lastname = ''
-
-    vars = dict(firstname = firstname, lastname = lastname)
-    return str(env.get_template("submit.html").render(vars))
-    
+    return MyApp()
