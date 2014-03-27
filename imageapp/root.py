@@ -40,3 +40,4 @@ class RootDirectory(Directory):
         response.set_content_type(item[1])
         return item[0]
         return img
+
