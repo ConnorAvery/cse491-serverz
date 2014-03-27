@@ -7,6 +7,10 @@ from sys import stderr
 import time
 from urlparse import urlparse
 from wsgiref.validate import validator
+import imageapp
+import quixote
+from quixote.demo.altdemo import create_publisher
+import argparse
 
 def handle_connection(conn, port):
     request = conn.recv(1)
@@ -41,7 +45,7 @@ def handle_connection(conn, port):
     env['wsgi.multiprocess'] = False
     env['wsgi.run_once'] = False
     env['wsgi.url_scheme'] = 'http'
-    env['HTTP_COOKIE'] = headers['cookie'] if 'cookie' in headers.keys() else ''
+    #env['HTTP_COOKIE'] = headers['cookie'] if 'cookie' in headers.keys() else ''
 
     body = ''
     if request.startswith('POST '):
@@ -68,28 +72,77 @@ def handle_connection(conn, port):
         conn.send(data)
     conn.close()
 
+def get_args():
+    app_list = ['altdemo', 'image', 'myapp']
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-A', action="store",
+                              dest='arg_app',
+                              help="The application to run")
+    parser.add_argument('-p', action="store",
+                              default=0,
+                              dest='arg_port',
+                              help="The port to use (optional)",
+                              required=False,
+                              type=int)
+
+    results = parser.parse_args()
+    if results.arg_app not in app_list:
+       print '\nError, that application does not exist\n'
+       exit()
+    return results.arg_app, results.arg_port
+
 def main(socketmodule=None):
     if socketmodule is None:
         socketmodule = socket
 
-    # Create a socket object
-    s = socketmodule.socket()
-    # Get local machine name
-    host = socketmodule.getfqdn()
-    port = random.randint(8000, 9999)
-    # Bind to the port
-    s.bind((host, port)) 
-    print 'Starting server on', host, port
-    print 'The Web server URL for this would be http://%s:%d/' % (host, port)
+    
+    app, port = get_args()
 
-    s.listen(5) # Now wait for client connection
+    
 
-    print 'Entering infinite loop; hit CTRL-C to exit'
-    while True:
-        # Establish connection with client
-        c, (client_host, client_port) = s.accept()
-        print 'Got connection from', client_host, client_port
-        handle_connection(c, client_port)
+    if app == 'myapp':
+        s = socketmodule.socket()
+        host = socketmodule.getfqdn()
+        if port == 0:
+            port = random.randint(8000, 9999)
+        s.bind((host, port))
+        print 'Starting server on', host, port
+        print 'The Web server URL for this would be http://%s:%d/' % (host, port)
+        s.listen(5)
+        print 'Entering infinite loop; hit CTRL-C to exit'
+        while True:
+            c, (client_host, client_port) = s.accept()
+            print 'Got connection from', client_host, client_port
+            handle_connection(c, client_port)
+
+    elif app == 'image':
+        imageapp.setup()
+        p = imageapp.create_publisher()
+        wsgi_app = quixote.get_wsgi_app()
+        from wsgiref.simple_server import make_server
+        host = socketmodule.getfqdn()
+        if port == 0:
+            port = random.randint(8000, 9999)
+        httpd = make_server('', port, wsgi_app)
+        print 'Starting server on', host, port
+        print 'The Web server URL for this would be http://%s:%d/' % (host, port)
+        try:
+            httpd.serve_forever()
+        finally:
+            imageapp.teardown()
+
+    elif app == 'altdemo':
+        p = create_publisher()
+        wsgi_app = quixote.get_wsgi_app()
+        from wsgiref.simple_server import make_server
+        host = socketmodule.getfqdn()
+        if port == 0:
+            port = random.randint(8000, 9999)
+        p.is_thread_safe = True
+        httpd = make_server('', port, wsgi_app)
+        print 'Starting server on', host, port
+        print 'The Web server URL for this would be http://%s:%d/' % (host, port)
+        httpd.serve_forever()
 
 if __name__ == '__main__':
     main()
