@@ -13,3 +13,8 @@
  2014-01-23  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
 
  * Hw3 added submit form
+
+ 2014-01-23  Connor Avery <connoravery@Connor-Avery-MacBook-Pro-3.local>
+ 
+ * HW9
+ * Did Project number 4 "Change imageapp to support JPEG and TIFF."
