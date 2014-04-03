@@ -1,7 +1,4 @@
-# from http://docs.python.org/2/library/wsgiref.html
-
-# used code from jonest31 this week
-# started hw5 too late
+#! /usr/bin/env python
 
 import cgi
 import jinja2
@@ -12,13 +9,13 @@ from StringIO import StringIO
 from urlparse import urlparse, parse_qs
 from wsgiref.simple_server import make_server
 
+
 def render_page(page, params):
     loader = jinja2.FileSystemLoader('./templates')
     env = jinja2.Environment(loader=loader)
     template = env.get_template(page)
     x = template.render(params).encode('latin-1', 'replace')
     return str(x)
-
 
 # Get a list of all files in a directory
 def get_contents(dir):
@@ -39,12 +36,11 @@ class MyApp(object):
                    '/content' : self.content,
                    '/file' : self.File,
                    '/image' : self.Image,
+                   '/images_thumb' : self.images_thumb,
                    '/form' : self.form,
-                   '/submit' : self.submit,
-                   '/images_thumb' : self.images_thumb}
+                   '/submit' : self.submit }
 
         path = environ['PATH_INFO']
-        
         if path[:5] == '/text':
             return self.text(environ, start_response)
         elif path[:5] == '/pics':
