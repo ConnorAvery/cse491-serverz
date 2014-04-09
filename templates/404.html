@@ -1,6 +1,12 @@
-<html>
-	<body>
-		404 Not Found <br />
-		We couldn't find the page at {{ path }}<br />
-	</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %} Web Server - Error Page {% endblock title %}
+
+{% block body %}
+
+<h1>Error Page</h1>
+Oopsies, this isn't the page you want. :(
+
+{% endblock body %}
+
+
