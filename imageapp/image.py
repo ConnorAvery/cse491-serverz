@@ -2,27 +2,39 @@
 
 import sqlite3
 
+def add_image_metadata(data, name, desc):
+    img = {'data' : data}
+    img['name'] = name
+    img['desc'] = desc
+    return img
+
 def add_image(data):
-    if images:
-        image_num = max(images.keys()) + 1
-    else:
-        image_num = 0
-    print image_num
-    images[image_num] = data
-    return image_num
+    images.append(data)
+    return len(images)
 
 def get_image(num):
-    return images[num]
+    img = images[num]
+    return img['data']
 
 def get_latest_image():
-    image_num = max(images.keys())
-    return images[0]
+    img = images[0]
+    return img['data']
+
+def get_latest_name():
+    img = images[len(images) - 1]
+    return img['name']
+
+def get_latest_desc():
+    img = images[len(images) - 1]
+    return img['desc']
+
 
 db = sqlite3.connect('images.sqlite')
 db.text_factory = bytes
 c = db.cursor()
-c.execute('SELECT image FROM image_store')
-images = {}
+c.execute('SELECT image, name, desc FROM image_store')
+images = []
 rows = c.fetchall()
 for row in rows:
     add_image(row[0])
+    add_image_metadata(row[0], row[1], row[2])
