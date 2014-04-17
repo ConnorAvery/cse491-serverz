@@ -20,13 +20,18 @@ class RootDirectory(Directory):
         print request.form.keys()
 
         the_file = request.form['file']
+        file_name = request.form['name']
+        file_desc = request.form['desc']
+        
         print dir(the_file)
         print 'received file with name:', the_file.base_filename
         data = the_file.read(int(1e9))
 
-        image.add_image(data)
+        
+        img = image.add_image_metadata(data, file_name, file_desc)
+        image.add_image(img)
         db.text_factory = bytes
-        db.insertToDB(data);
+        db.insertToDB(data, file_name, file_desc);
 
         return quixote.redirect('./')
 
@@ -37,10 +42,24 @@ class RootDirectory(Directory):
     @export(name='image_raw')
     def image_raw(self):
         response = quixote.get_response()
-        response.set_content_type('image/png')
+        response.set_content_type('image/jpg')
         img = image.get_latest_image()
         return img
 
+    @export(name='image_name')
+    def image_raw(self):
+        response = quixote.get_response()
+        response.set_content_type('text/plain')
+        img = image.get_latest_name()
+        return img
+    
+    @export(name='image_desc')
+    def image_raw(self):
+        response = quixote.get_response()
+        response.set_content_type('text/plain')
+        img = image.get_latest_desc()
+        return img
+    
     @export(name='body.jpg')
     def body_jpg(self):
         data = html.get_image('body.jpg')
