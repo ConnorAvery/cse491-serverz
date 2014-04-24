@@ -1,0 +1,15 @@
+1|becky|This is old school!
+1|taylor|SMB rocked!
+1|becky|You got that right!
+2|taylor|I use Chrome a lot
+3|becky|Just some random pic Titus added
+4|taylor|Computers rule!
+4|becky|Totally!!!
+5|taylor|I test this app primarily on Safari
+5|becky|Seriously???
+5|taylor|Yeah... that's right
+6|taylor|Nothing works in IE anymore...
+7|taylor|Linux is awesome
+7|becky|You better believe it!
+8|becky|Ubuntu is the future!
+8|taylor|I am a mac owner now...

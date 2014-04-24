@@ -1,7 +1,7 @@
-hermosa_pier.jpg|The Hermosa Beach pier
-manhattan_pier.jpg|The Manhattan Beach pier
-mellos.png|Why you no see drum major meme
-firefox.png|The Mozilla Firefox logo
-tif.TIF|This is a tif file of a teddy bear
-mellos2.png|Mellos cant see haters
-tulips.png|A feild of tulips
+hermosa_pier.jpg|megan|The Hermosa Beach pier
+manhattan_pier.jpg|megan|The Manhattan Beach pier
+mellos.png|taylor|Why you no see drum major meme
+firefox.png|taylor|The Mozilla Firefox logo
+tif.TIF|megan|This is a tif file of a teddy bear
+mellos2.png|taylor|Mellos cant see haters
+tulips.png|taylor|A feild of tulips
